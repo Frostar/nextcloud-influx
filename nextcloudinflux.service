@@ -1,0 +1,17 @@
+
+[Unit]
+Description=Nextcloud-Influx - Send Nextcloud serverinfo to InfluxDB for visualization
+Documentation=https://github.com/Frostar/nextcloud-influx
+After=network-online.target
+
+[Service]
+User=pi
+Type=notify
+Environment=PYTHONUNBUFFERED=true
+ExecStart=/usr/bin/python3 /home/pi/nextcloud-influx/nextcloudinflux.py
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
+

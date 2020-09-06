@@ -1,5 +1,5 @@
 import pytest
-from piholeinflux import Pihole
+from nextcloudinflux import Pihole
 
 
 PAYLOAD_FIXTURE = {

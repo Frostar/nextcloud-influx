@@ -1,18 +1,16 @@
 #! /usr/bin/env python3
+import logging
+import sys
 
 import requests
-from time import sleep, localtime, strftime
-from influxdb import InfluxDBClient
 import sdnotify
-import sys
-import logging
-
+from time import sleep, localtime, strftime
 from dynaconf import LazySettings, Validator
-from dynaconf.utils.boxing import DynaBox
+from influxdb import InfluxDBClient
 
 settings = LazySettings(
     SETTINGS_FILE_FOR_DYNACONF="default.toml,user.toml",
-    ENVVAR_PREFIX_FOR_DYNACONF="PIHOLE",
+    ENVVAR_PREFIX_FOR_DYNACONF="NEXTCLOUD",
 )
 settings.validators.register(Validator("INSTANCES", must_exist=True))
 settings.validators.validate()
@@ -22,50 +20,57 @@ n = sdnotify.SystemdNotifier()
 logger = logging.getLogger()
 
 
-class Pihole:
-    """Container object for a single Pi-hole instance."""
+class NextCloud:
+    """Container object for a single Nextcloud instance."""
 
-    def __init__(self, name, url):
+    def __init__(self, name, user, password, url):
         self.name = name
+        self.user = user
+        self.password = password
         self.url = url
         self.timeout = settings.as_int("REQUEST_TIMEOUT")
-        self.logger = logging.getLogger("pihole." + name)
+        self.logger = logging.getLogger("nextcloud." + name)
         self.logger.info("Initialized for %s (%s)", name, url)
 
         self.verify_ssl = settings.as_bool("REQUEST_VERIFY_SSL")
         if not self.verify_ssl:
-            self.logger.warning("Disabled SSL verification for Pi-hole requests")
+            self.logger.warning("Disabled SSL verification for Nextcloud requests")
 
         if logger.level <= logging.INFO:
             data = self.get_data()
             keys = ", ".join(data.keys())
-            self.logger.info("Found keys {}.".format(keys,))
+            self.logger.info("Found keys {}.".format(keys, ))
 
     def get_data(self):
-        """Retrieve API data from Pi-hole, and return as dict on success."""
-        response = requests.get(self.url, timeout=self.timeout, verify=self.verify_ssl,)
+        """Retrieve API data from Nextcloud serverinfo, and return as dict on success."""
+        response = requests.get(self.url + "?format=json", auth=(self.user, self.password), timeout=self.timeout,
+                                verify=self.verify_ssl)
         if response.status_code == 200:
             self.logger.debug("Got %d bytes", len(response.content))
-            return self.sanitize_payload(response.json())
+            return self.format_payload(response.json())
         else:
             self.logger.error(
                 "Got unexpected response %d, %s", response.status_code, response.content
             )
 
     @staticmethod
-    def sanitize_payload(data):
-        data = data.copy()
-        if "gravity_last_updated" in data:
-            if "absolute" in data["gravity_last_updated"]:
-                data["gravity_last_updated"] = data["gravity_last_updated"]["absolute"]
+    def format_payload(raw_response_data):
+        out = {}
+
+        def flatten(x, name=''):
+            if type(x) is dict:
+                for a in x:
+                    flatten(x[a], name + a + '.')
+            elif type(x) is list:
+                i = 0
+                for a in x:
+                    flatten(a, name + str(i) + '.')
+                    i += 1
             else:
-                del data["gravity_last_updated"]
+                out[name[:-1]] = x
 
-        # Monkey-patch ads-% to be always float (type not enforced at API level)
-        if "ads_percentage_today" in data:
-            data["ads_percentage_today"] = float(data["ads_percentage_today"])
-
-        return data
+        flatten(raw_response_data["ocs"]["data"])
+        return out
 
 
 class Daemon(object):
@@ -81,29 +86,18 @@ class Daemon(object):
         )
         self.single_run = single_run
 
-        if isinstance(settings.INSTANCES, DynaBox):
-            self.piholes = [
-                Pihole(name, url) for name, url in settings.INSTANCES.items()
-            ]
-        elif isinstance(settings.INSTANCES, list):
-            self.piholes = [
-                Pihole("pihole" + str(n + 1), url)
-                for n, url in enumerate(settings.INSTANCES)
-            ]
-        elif "=" in settings.INSTANCES:
-            name, url = settings.INSTANCES.split("=", maxsplit=1)
-            self.piholes = [Pihole(name, url)]
-        elif isinstance(settings.INSTANCES, str):
-            self.piholes = [Pihole("pihole", settings.INSTANCES)]
+        if "; " in settings.INSTANCES:
+            name, user, password, url = settings.INSTANCES.split("; ")
+            self.instances = [NextCloud(name, user, password, url)]
         else:
             raise ValueError("Unable to parse instances definition(s).")
 
     def run(self):
         logger.info("Running daemon, reporting to InfluxDB at %s.", self.influx._host)
         while True:
-            for pi in self.piholes:
-                data = pi.get_data()
-                self.send_msg(data, pi.name)
+            for instance in self.instances:
+                data = instance.get_data()
+                self.send_msg(data, instance.name)
             timestamp = strftime("%Y-%m-%d %H:%M:%S %z", localtime())
 
             n.notify("STATUS=Last report to InfluxDB at {}".format(timestamp))
@@ -114,7 +108,7 @@ class Daemon(object):
             sleep(settings.as_int("REPORTING_INTERVAL"))  # pragma: no cover
 
     def send_msg(self, resp, name):
-        json_body = [{"measurement": "pihole", "tags": {"host": name}, "fields": resp}]
+        json_body = [{"measurement": "nextcloud", "tags": {"host": name}, "fields": resp}]
 
         self.influx.write_points(json_body)
 

@@ -30,7 +30,7 @@ matrix:
         - TEST_CMD="black --check --verbose ."
     - name: "flake8"
       env:
-        - TEST_CMD="flake8 piholeinflux.py tests/test_*.py"
+        - TEST_CMD="flake8 nextcloudinflux.py tests/test_*.py"
     - name: "pytest-py3.5"
       python: 3.5
     - name: "pytest-py3.6"

@@ -1,4 +1,9 @@
-# Pi-hole-Influx
+# Nextcloud-Influx
+
+**VERY MUCH WORK IN PROGRESS!**
+
+This is going to be a service that collects and send [serverinfo](https://github.com/nextcloud/serverinfo) data from Nextcloud instances to influxDB.
+The goal is for this project to be as feature complete as the [original fork](https://github.com/janw/pi-hole-influx).
 
 [![Build Status](https://travis-ci.org/janw/pi-hole-influx.svg?branch=master)](https://travis-ci.org/janw/pi-hole-influx)
 [![Maintainability](https://api.codeclimate.com/v1/badges/cfe71020e6505ca65cfc/maintainability)](https://codeclimate.com/github/janw/pi-hole-influx/maintainability)

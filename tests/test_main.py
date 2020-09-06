@@ -1,5 +1,5 @@
 import pytest
-from piholeinflux import main
+from nextcloudinflux import main
 
 
 @pytest.mark.vcr()

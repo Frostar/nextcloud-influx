@@ -5,8 +5,8 @@ reporting_interval = "30"
 
 influxdb_port = "8086"
 influxdb_hostname = "10.10.10.1"
-influxdb_username = "pihole"
-influxdb_password = "allthosesweetumstatistics"
-influxdb_database = "pihole"
+influxdb_username = "influx"
+influxdb_password = "password"
+influxdb_database = "nextcloud"
 
-instances="http://127.0.0.1:8080/admin/api.php"
+instances="nextcloud; user; password; http://127.0.0.1/ocs/v2.php/apps/serverinfo/api/v1/info"

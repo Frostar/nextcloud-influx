@@ -1,4 +1,4 @@
-from piholeinflux import Daemon
+from nextcloudinflux import Daemon
 
 
 def test_send_msg(mocker):
