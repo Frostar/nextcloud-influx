@@ -1,6 +1,6 @@
 ARG BUILD_FROM=python:3.6-alpine
 FROM $BUILD_FROM
-LABEL maintainer="Jan Willhaus <mail@janwillhaus.de>"
+LABEL maintainer="Jens Frost <post@j-frost.dk>"
 
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
@@ -11,7 +11,7 @@ RUN apk add --no-cache tini && \
 
 COPY user.toml.example ./user.toml
 COPY default.toml ./
-COPY piholeinflux.py ./
+COPY nextcloudinflux.py ./
 
 ENTRYPOINT [ "tini", "--" ]
-CMD [ "python", "./piholeinflux.py" ]
+CMD [ "python", "./nextcloudinflux.py" ]
