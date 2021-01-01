@@ -76,7 +76,7 @@ tag latest:
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     - docker pull $CI_REGISTRY_IMAGE:$IMAGE_FLAVOR || true
     - docker build
-      --build-arg BUILD_FROM=${BUILD_FROM}
+      --build-arg BUILD_PREFIX=${BUILD_PREFIX}
       --tag $CI_REGISTRY_IMAGE:${IMAGE_FLAVOR}-$CI_COMMIT_SHORT_SHA
       --file ${BUILD_DOCKERFILE} .
     - docker run --rm $CI_REGISTRY_IMAGE:${IMAGE_FLAVOR}-$CI_COMMIT_SHORT_SHA uname -m
@@ -96,7 +96,7 @@ build armv7:
   extends: .build special
   variables:
     IMAGE_FLAVOR: armv7
-    BUILD_FROM: "arm32v7/python:3.7"
+    BUILD_PREFIX: "arm32v7/"
 
 tag armv7:
   extends: .tag special
