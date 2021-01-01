@@ -61,16 +61,17 @@ class NextCloud:
             if type(x) is dict:
                 for a in x:
                     flatten(x[a], name + a + '.')
-            elif type(x) is list:
-                i = 0
-                for a in x:
-                    flatten(a, name + str(i) + '.')
-                    i += 1
+            # elif type(x) is list:
+            #     i = 0
+            #     # TODO Check if influx can handle
+            #     for a in x:
+            #         flatten(a, name + str(i) + '.')
+            #         i += 1
             else:
                 out[name[:-1]] = x
 
         flatten(raw_response_data["ocs"]["data"])
-        return out
+        return out["nextcloud.system.cpuload"]
 
 
 class Daemon(object):
@@ -132,4 +133,4 @@ def main(single_run=False):
 
 
 if __name__ == "__main__":
-    main()
+    main(True)
